@@ -1,0 +1,11 @@
+# Core dependencies (Python 3.9, TensorFlow 2.7 GPU)
+tensorflow==2.7
+numpy
+scipy
+h5py
+matplotlib
+sympy
+
+# The repository vendors autograd-minimize/ (used by pinns_2d.py / pinns_3d.py).
+# If the vendored folder is removed, install it from PyPI:
+# pip install autograd-minimize

@@ -1,0 +1,104 @@
+# PINNs-TF2.7-light-R4
+
+Physics-informed neural networks (PINNs) for reconstructing pulsatile flow fields in straight and curved pipes from sparse velocity data.
+
+This repository accompanies the manuscript:
+
+> **Reconstruction of pulsatile flow in curved pipes using physics-informed neural networks**
+> Xingchao Zhang, Fan Wu, Yunfan Yang, Hongping Wang, Shizhao Wang
+> Submitted to *European Journal of Mechanics - B/Fluids* (manuscript no. EJMFLU-D-26-00743).
+
+The PINN embeds the incompressible Navier–Stokes equations into the loss function and reconstructs the velocity and pressure fields simultaneously from velocity measurements (e.g., PIV-type data).
+
+## Reproducible example
+
+The data and weights included here correspond to the **single-plane (single-cross-section) configuration** of the manuscript: a three-dimensional curved pipe at Re = 1000, Wo = 10, β = π/32, in which the PINN is trained only on the streamwise (z = 0) measurement plane, so that the spatial-coverage effect of single-plane training data on pressure reconstruction can be reproduced and compared.
+
+| File | Description |
+|---|---|
+| `data/bendpipe/2d3c_Wo10Bpi32_reslu40_noise0_pinn.mat` | Training data for the single-plane case (3D curved pipe, Re = 1000, Wo = 10, β = π/32; velocity data on the z = 0 plane) |
+| `weights/2d3c_Wo10Bpi32_13_156_run0/` | Trained PINN weights for this single-plane case |
+
+Note: the pre-computed prediction file for this case (z = 0 plane) exceeds the GitHub file-size limit and is therefore not included; it can be regenerated from the provided weights with the instructions below.
+
+## Directory structure
+
+```
+.
+├── train.py                     # Training entry (contains training functions for 2D/3D cases)
+├── predict.py                   # Prediction entry (loads trained weights, predicts on planes)
+├── datagenerator.py             # Data loading / PIV-type data generation
+├── pinns_2d.py                  # 2D PINN model
+├── pinns_3d.py                  # 3D PINN model
+├── funcs.py                     # Helper functions (flow2D, LevenbergMarquardt, generate_dataset)
+├── maps.py                      # Network architecture (ResNet)
+├── userbackend.py               # TensorFlow backend / GPU configuration
+├── custom_lbfgs.py              # L-BFGS optimizer (optional)
+├── logger.py                    # Logging utilities
+├── autograd-minimize/           # Third-party dependency (required by pinns_2d/3d)
+├── data/
+│   └── bendpipe/
+│       └── 2d3c_Wo10Bpi32_reslu40_noise0_pinn.mat   # Single-plane training data (3D curved pipe, Re=1000, Wo=10, β=π/32)
+└── weights/
+    └── 2d3c_Wo10Bpi32_13_156_run0/   # Trained weights for the single-plane case
+```
+
+## Environment
+
+The code was developed and tested with:
+
+- Python 3.9
+- TensorFlow 2.7 (GPU)
+- CUDA 11.x / cuDNN 8.2
+- numpy, scipy, h5py, matplotlib, sympy
+
+Install the required packages:
+
+```bash
+pip install numpy scipy h5py matplotlib sympy tensorflow==2.7
+```
+
+The repository vendors the `autograd-minimize` package (used by `pinns_2d.py` / `pinns_3d.py` for BFGS-type fine-tuning). It is imported directly from this directory, so no separate installation is needed. If you prefer to install it from PyPI instead, run:
+
+```bash
+pip install autograd-minimize
+```
+
+and remove the vendored `autograd-minimize/` folder (or keep it; the import will use the installed package).
+
+## Usage
+
+1. **Load the trained model and generate predictions**
+
+   The model is loaded with the `NS3D_UnSteady_PINNs` class from `pinns_3d.py`. Load the provided weights with:
+
+   ```python
+   savename = '2d3c_Wo10Bpi32_13_156_run0'
+   save_file = './weights/' + savename + '/' + savename
+   domain = scipy.io.loadmat(save_file + '_paras.mat', squeeze_me=True)
+   norm_paras = domain['norm_paras']
+   hp = {'layers': [4] + 13 * [156] + [4],
+         'ExistModel': 1, 'train': False, 'maptype': 'rnn',
+         'savename': savename, 'Re': 1000.0, 'alpha': 1.0,
+         'norm_paras': norm_paras, 'tf_epochs': 8000, 'tf_batch_size': 5000,
+         'initial_epoch': 0, 'init_lr': 1.0e-3,
+         'bfgs_epochs': 0, 'bfgs_batch_size': 10000,
+         'lm_epochs': 0, 'lm_batch_size': 200}
+   pinn_model = NS3D_UnSteady_PINNs(hp)
+   ```
+
+   The network then maps any spatiotemporal coordinate `(t, x, y, z)` in the domain to `(u, v, w, p)`. Plane predictions (e.g., on the z = 0 plane) can be generated on any mesh of interest; `predict.py` shows the full plane-prediction routine (`predict_on_plane`). The training data file also provides the mesh and time range (`pred_xmesh`, `pred_ymesh`, `pred_zmesh`, `mint`, `maxt`) used in the manuscript.
+
+   Note: the prediction entry currently enabled at the bottom of `predict.py` corresponds to a different (synthetic-noise) experiment whose data file is not included here. For the single-plane case provided here, load the weights as above and call the plane-prediction routine on the mesh from `data/bendpipe/2d3c_Wo10Bpi32_reslu40_noise0_pinn.mat`.
+
+2. **Retrain the model from scratch**
+
+   The corresponding training setup is described in `train.py` (three-dimensional curved-pipe case, 13 hidden layers × 156 neurons, adaptive loss weighting, Adam + optional L-BFGS). Training a 3D case requires a GPU and takes on the order of 10–15 hours.
+
+## Reproducing the parameter sweep / data-coverage studies
+
+The manuscript also reports a Womersley-number / amplitude-ratio parameter sweep (`Wo = 0–15`, `β = π/64–π/8`) and a comparison of four training-data compositions (single-plane, assumed-parabolic inlet, orthogonal cross-plane, and full 3D). The corresponding training/prediction functions are included in `train.py` and `predict.py`; the associated CFD data files for those additional cases are large (>100 MB) and are not included in this repository. They can be requested from the corresponding author.
+
+## Citation
+
+If you use this code, please cite the manuscript above (once published) and the PINN references it builds upon (Raissi et al., 2019; Jin et al., 2021; Jagtap & Karniadakis, 2020).

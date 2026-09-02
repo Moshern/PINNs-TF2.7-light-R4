@@ -1,0 +1,9 @@
+# Python caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Large generated/intermediate files
+*.mat.bak
+.idea/
+.vscode/
