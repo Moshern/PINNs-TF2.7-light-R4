@@ -63,58 +63,6 @@ def Hasanuzzaman_DataGenerator(data_pathname):
 
 
 
-def wufan_DataGenerator(data_pathname, data_filename):
-    """
-    oscillatory cylinder
-    """
-    # Please use HDF reader for matlab v7.3 files
-    # data = sio.loadmat(os.path.join(data_pathname, data_filename))
-    # data_filename = 'wufan_movingcylinder2D_reslu40_noise4_wallrefined.mat'
-    tmp = h5py.File(os.path.join(data_pathname, data_filename),'r')
-    
-    keys = ['data_eqns', 'data_supervised',
-            'bc_uv', 'bc_init',
-            'bc_u',  'bc_v', 'bc_p',
-            'bc_ux', 'bc_uy',
-            'bc_vx', 'bc_vy',        
-            'bc_px', 'bc_py',
-            'minx','maxx','dx',
-            'miny','maxy','dy']
-    
-    # default is no conditions
-    data_dict = dict.fromkeys(keys, None)
-    
-    data_dict['data_eqns'] = np.transpose(tmp['data_eqns'])
-    data_dict['data_supervised'] = np.transpose(tmp['data_supervised'])
-    data_dict['bc_uv'] = np.transpose(tmp['bc_uv'])
-    # data_dict['bc_p'] = np.transpose(tmp['bc_p'])
-    
-    # data_dict['bc_px'] = np.transpose(tmp['bc_px'])
-    # data_dict['bc_ux'] = np.transpose(tmp['bc_ux'])
-    # data_dict['bc_vx'] = np.transpose(tmp['bc_vx'])
-    
-    # data_dict['bc_py'] = np.transpose(tmp['bc_py'])
-    # data_dict['bc_uy'] = np.transpose(tmp['bc_uy'])
-    # data_dict['bc_vy'] = np.transpose(tmp['bc_vy'])
-        
-    # normalization parameters
-    # [min(t),min(x),min(y),mean(u),mean(v),mean(p)]
-    # [max(t),max(x),max(y),std(u),std(v),std(p)]
-    norm_paras = np.zeros([2,6])
-    eqns =  np.transpose(tmp['data_eqns'])
-    norm_paras[0,0:3] = eqns[:,0:3].min(0)
-    norm_paras[1,0:3] = eqns[:,0:3].max(0)
-    data = data_dict['data_supervised']
-    norm_paras[0,3:6] = np.mean(data[:,3:6], 0)
-    norm_paras[1,3:6] = np.std(data[:,3:6], 0)
-    norm_paras[0,3:4] = 0
-    norm_paras[1,3:4] = 1
-    norm_paras[0,4:5] = 0
-    norm_paras[1,4:5] = 1
-    norm_paras[0,5:6] = 0
-    norm_paras[1,5:6] = 1
-    
-    return data_dict, norm_paras
 
 def mitralvalve3D_DataGenerator(data_pathname, data_filename):
     """

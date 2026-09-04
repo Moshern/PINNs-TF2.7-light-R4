@@ -25,15 +25,14 @@ Note: the pre-computed prediction file for this case (z = 0 plane) exceeds the G
 
 ```
 .
-├── train.py                     # Training entry (contains training functions for 2D/3D cases)
+├── train.py                     # Training entry (contains the 3D curved-pipe case)
 ├── predict.py                   # Prediction entry (loads trained weights, predicts on planes)
 ├── datagenerator.py             # Data loading / PIV-type data generation
-├── pinns_2d.py                  # 2D PINN model
 ├── pinns_3d.py                  # 3D PINN model
 ├── funcs.py                     # Helper functions (LevenbergMarquardt, generate_dataset)
 ├── maps.py                      # Network architecture (ResNet)
 ├── userbackend.py               # TensorFlow backend / GPU configuration
-├── autograd-minimize/           # Third-party dependency (required by pinns_2d/3d)
+├── autograd-minimize/           # Third-party dependency (required by pinns_3d)
 ├── data/
 │   └── bendpipe/
 │       └── 2d3c_Wo10Bpi32_reslu40_noise0_pinn.mat   # Single-plane training data (3D curved pipe, Re=1000, Wo=10, β=π/32)
@@ -56,7 +55,7 @@ Install the required packages:
 pip install numpy scipy h5py matplotlib sympy tensorflow==2.7
 ```
 
-The repository vendors the `autograd-minimize` package (used by `pinns_2d.py` / `pinns_3d.py` for BFGS-type fine-tuning). It is imported directly from this directory, so no separate installation is needed. If you prefer to install it from PyPI instead, run:
+The repository vendors the `autograd-minimize` package (used by `pinns_3d.py` for BFGS-type fine-tuning). It is imported directly from this directory, so no separate installation is needed. If you prefer to install it from PyPI instead, run:
 
 ```bash
 pip install autograd-minimize
