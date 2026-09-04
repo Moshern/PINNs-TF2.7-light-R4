@@ -30,11 +30,9 @@ Note: the pre-computed prediction file for this case (z = 0 plane) exceeds the G
 ├── datagenerator.py             # Data loading / PIV-type data generation
 ├── pinns_2d.py                  # 2D PINN model
 ├── pinns_3d.py                  # 3D PINN model
-├── funcs.py                     # Helper functions (flow2D, LevenbergMarquardt, generate_dataset)
+├── funcs.py                     # Helper functions (LevenbergMarquardt, generate_dataset)
 ├── maps.py                      # Network architecture (ResNet)
 ├── userbackend.py               # TensorFlow backend / GPU configuration
-├── custom_lbfgs.py              # L-BFGS optimizer (optional)
-├── logger.py                    # Logging utilities
 ├── autograd-minimize/           # Third-party dependency (required by pinns_2d/3d)
 ├── data/
 │   └── bendpipe/
@@ -97,7 +95,7 @@ and remove the vendored `autograd-minimize/` folder (or keep it; the import will
 
 ## Reproducing the parameter sweep / data-coverage studies
 
-The manuscript also reports a Womersley-number / amplitude-ratio parameter sweep (`Wo = 0–15`, `β = π/64–π/8`) and a comparison of four training-data compositions (single-plane, assumed-parabolic inlet, orthogonal cross-plane, and full 3D). The corresponding training/prediction functions are included in `train.py` and `predict.py`; the associated CFD data files for those additional cases are large (>100 MB) and are not included in this repository. They can be requested from the corresponding author.
+The manuscript also reports a Womersley-number / amplitude-ratio parameter sweep (`Wo = 0–15`, `β = π/64–π/8`) and a comparison of four training-data compositions (single-plane, assumed-parabolic inlet, orthogonal cross-plane, and full 3D). The single-plane curved-pipe case included here is representative of this data-coverage study. The training/prediction routines for the additional cases (other `Wo`/`β` combinations and other data compositions) follow the same code structure as the provided single-plane example, by switching the data file and `savename` in `train.py` / `predict.py`; the associated CFD data files for those cases are large (>100 MB) and are not included in this repository. They can be requested from the corresponding author.
 
 ## Citation
 
