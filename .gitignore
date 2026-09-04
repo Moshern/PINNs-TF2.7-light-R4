@@ -11,9 +11,8 @@ __pycache__/
 # Full CFD training file (too large for GitHub); only the extracted mesh is tracked
 data/bendpipe/Re1000Wo10_noise5_data5_pinn.mat
 
-# Intermediate checkpoints saved every N epochs (only the final weights are tracked)
-weights/*/checkpoint-*
-weights/*/*_epoch_*
+# Trained weights are not tracked; generated locally by train.py
+weights/
 
 # Prediction outputs
 predict_results/
