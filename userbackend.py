@@ -36,8 +36,8 @@ if gpus:
     """
     for gpu in gpus:
         tf.config.experimental.set_memory_growth(gpu, True)
-        # 和MirroredStrategy冲突
-        #tf.config.set_visible_devices(gpu,"GPU") 
+        # conflicts with MirroredStrategy
+        #tf.config.set_visible_devices(gpu,"GPU")
         print('Device info:')
         print(gpu)
 else:
@@ -45,8 +45,8 @@ else:
     """
     for cpu in cpus:
         tf.config.experimental.set_memory_growth(cpu, True)
-        # 可能和MirroredStrategy冲突
-        #tf.config.set_visible_devices(cpu,"CPU") 
+        # conflicts with MirroredStrategy
+        #tf.config.set_visible_devices(cpu,"CPU")
         print('Device info:\n')
         print(cpu)
 

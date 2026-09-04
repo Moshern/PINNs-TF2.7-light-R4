@@ -103,10 +103,8 @@ def res_block(input_tensor, input_units, scale=0.2, training_func=None):
     
     if scale:
         """
-        lambda匿名函数的格式：冒号前是参数，可以有多个，用逗号隔开，冒号右边的为表达式。
-        其实lambda返回值是一个函数的地址，也就是函数对象。
-        
-        Lambda:仅仅对数据进行变换，不学习
+        Lambda anonymous function: parameters before the colon, expression after it.
+        Lambda returns a function object; it only transforms the data and does not learn.
         x = x*scale
         """
         x = Lambda(lambda t: t * scale)(x)  
@@ -131,8 +129,8 @@ def generator(layers, norm_paras, maptype='rnn'):
     input_scale = 2.0*(inputs - lb)/(ub - lb) - 1.0
     
     
-    # 训练激活函数中的自适应系数
-    # 构建全链接网络，input_scale[1:-1,:]只和空间坐标有关
+    # train the adaptive activation-function coefficients
+    # build a fully connected network; input_scale[1:-1,:] depends only on the spatial coordinates
     # act_layer = 3*[layers[1]]
     # act_y = input_scale[:,1:4]
     # for width in act_layer[0:-1]:

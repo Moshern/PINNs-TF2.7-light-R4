@@ -118,7 +118,7 @@ class NS3D_UnSteady_PINNs(object):
         self.loss_fdat = []
         self.loss_eqns = []
         self.loss_conds = []
-        # 根据梯度计算权重，初始值为0
+        # weight from gradient statistics; initial value is 0
         self.weight_fdat = [np.array(1.0)]
         self.weight_bc = [np.array(1.0)]
         
@@ -237,10 +237,10 @@ class NS3D_UnSteady_PINNs(object):
                                                     data_rate=1.0,
                                                     batchsize=self.cond_batch_size,
                                                     isrepeat=True)
-            # 分布式训练
+            # distribute the dataset over replicas
             train_data = self.strategy.experimental_distribute_dataset(train_data)
             val_data = self.strategy.experimental_distribute_dataset(val_data)
-            # 使用iter显示创建迭代器            
+            # use iter to create the iterator            
             self.conds[key]  = [train_data, iter(train_data)]           
   
      
@@ -259,12 +259,12 @@ class NS3D_UnSteady_PINNs(object):
                                                     data_rate=self.data_rate,
                                                     batchsize=self.global_batch_size,
                                                     isrepeat=True)
-            # 分布式训练
+            # distribute the dataset over replicas
             train_data = self.strategy.experimental_distribute_dataset(train_data)
             val_data = self.strategy.experimental_distribute_dataset(val_data) 
             # estimate the batch number
             # self.batch_num = int(X.shape[0]*self.data_rate/self.global_batch_size)
-            # 使用iter显示创建迭代器
+            # use iter to create the iterator
             self.data_eqns = [train_data, iter(train_data)]
 
  
@@ -282,10 +282,10 @@ class NS3D_UnSteady_PINNs(object):
                                                      data_rate=1.0,
                                                      batchsize=self.cond_batch_size,
                                                      isrepeat=True)
-             # 分布式训练
+             # distribute the dataset over replicas
              train_data = self.strategy.experimental_distribute_dataset(train_data)
              val_data = self.strategy.experimental_distribute_dataset(val_data)
-             # 使用iter显示创建迭代器
+             # use iter to create the iterator
              self.data_sp = [train_data, iter(train_data)]
              
 
@@ -445,14 +445,14 @@ class NS3D_UnSteady_PINNs(object):
     #     """
     #     Returns
     #     -------
-    #     the gradient of u, v, w, p (三维版本)
+    #     the gradient of u, v, w, p (3D version)
     #     """
-    #     # 定义所有可能的梯度键（包含三维分量）
+    #     # define all possible gradient keys (including 3D components)
     #     keys = ['ux', 'uy', 'uz',
     #             'vx', 'vy', 'vz',
     #             'wx', 'wy', 'wz',
     #             'px', 'py', 'pz']
-    #     grad = dict.fromkeys(keys, None)  # 初始化字典
+    #     grad = dict.fromkeys(keys, None)  # initialize the dict
     #
     #     t = tf.convert_to_tensor(X[:, 0:1], self.dtype)
     #     x = tf.convert_to_tensor(X[:, 1:2], self.dtype)
@@ -464,21 +464,21 @@ class NS3D_UnSteady_PINNs(object):
     #         tape.watch(x)
     #         tape.watch(y)
     #         tape.watch(z)
-    #         # 四维输入 [t, x, y, z]
+    #         # 4D input [t, x, y, z]
     #         X = tf.stack([t[:, 0], x[:, 0], y[:, 0], z[:, 0]], axis=1)
     #         Y = self.model(X)
     #         u = Y[:, 0:1]
     #         v = Y[:, 1:2]
     #         w = Y[:, 2:3]
     #         p = Y[:, 3:4]
-    #         # 反归一化
+    #         # denormalize
     #         u = u * self.norm_paras[1, 4] + self.norm_paras[0, 4]
     #         v = v * self.norm_paras[1, 5] + self.norm_paras[0, 5]
     #         w = w * self.norm_paras[1, 6] + self.norm_paras[0, 6]
     #         p = p * self.norm_paras[1, 7] + self.norm_paras[0, 7]
     #
     #     flag = flag.lower()
-    #     # 处理单个梯度请求
+    #     # handle a single gradient request
     #     if flag == 'ux':
     #         grad['ux'] = tape.gradient(u, x)
     #     elif flag == 'uy':
@@ -503,7 +503,7 @@ class NS3D_UnSteady_PINNs(object):
     #         grad['py'] = tape.gradient(p, y)
     #     elif flag == 'pz':
     #         grad['pz'] = tape.gradient(p, z)
-    #     # 处理 "all" 请求（返回所有梯度）
+    #     # handle the "all" request (return all gradients)
     #     elif flag == 'all':
     #         grad['ux'] = tape.gradient(u, x)
     #         grad['uy'] = tape.gradient(u, y)
@@ -518,12 +518,12 @@ class NS3D_UnSteady_PINNs(object):
     #         grad['py'] = tape.gradient(p, y)
     #         grad['pz'] = tape.gradient(p, z)
     #     else:
-    #         # 无效 flag 抛出异常
+    #         # raise an error for an invalid flag
     #         valid_flags = keys + ['all']
     #         raise ValueError(f"Invalid flag: {flag}. Supported flags are: {valid_flags}")
     #
     #     del tape
-    #     return grad  # 返回梯度字典
+    #     return grad  # return the gradient dict
 
     
     
@@ -551,13 +551,13 @@ class NS3D_UnSteady_PINNs(object):
     
     def get_dynamic_weight(self, batch_data):
         """
-        动态计算权重
-        为了节约内存，分别计算梯度
+        Compute the dynamic loss weights.
+        Gradients are computed separately to save memory.
         """
         with tf.GradientTape(persistent=False) as tap:
             # loss of equation
             le = self.loss_fn_eqns(batch_data)
-        # 方程误差关于神经网络参数的梯度
+        # gradient of the equation loss w.r.t. the network parameters
         ge = tap.gradient(le,
                           self.model.trainable_variables,
                          unconnected_gradients=tf.UnconnectedGradients.ZERO)
@@ -571,7 +571,7 @@ class NS3D_UnSteady_PINNs(object):
         with tf.GradientTape(persistent=False) as tap:
             # loss of data
             ld = self.loss_fn_data(batch_data)    
-        # 数据误差关于神经网络参数的梯度
+        # gradient of the data loss w.r.t. the network parameters
         gd = tap.gradient(ld,
                           self.model.trainable_variables,
                           unconnected_gradients=tf.UnconnectedGradients.ZERO)
@@ -585,7 +585,7 @@ class NS3D_UnSteady_PINNs(object):
         with tf.GradientTape(persistent=False) as tap:
             # loss of boundary condtions
             lb = self.loss_fn_conds(batch_data)
-        # 边界条件关于神经网络参数的梯度
+        # gradient of the boundary loss w.r.t. the network parameters
         gb = tap.gradient(lb,
                           self.model.trainable_variables,
                           unconnected_gradients=tf.UnconnectedGradients.ZERO)
@@ -595,7 +595,7 @@ class NS3D_UnSteady_PINNs(object):
         gb_mean = tf.reduce_mean(tf.abs(gb))/tf.sqrt(lb)
         del tap
         
-        # 根据梯度计算权重, 更偏向数据   
+        # weights from gradient statistics, biased toward the data
         wd = tf.minimum(ge_mean/gd_mean,1.0e3)
         wb = tf.minimum(ge_mean/gb_mean,1.0e3)           
         
@@ -606,7 +606,7 @@ class NS3D_UnSteady_PINNs(object):
     @tf.function
     def grad_custom(self, batch_data, weight_data, weight_bc):
         """
-        根据输入X=[t,x,y,z]计算graient
+        Compute the gradient of the total loss for inputs X=[t,x,y,z].
         """ 
         self.iternum = self.iternum+1          
         # estimate the total loss
@@ -617,7 +617,7 @@ class NS3D_UnSteady_PINNs(object):
             ld = self.loss_fn_data(batch_data)    
             # loss of boundary condtions
             lb = self.loss_fn_conds(batch_data)
-            # 注意：动态权重在训练时提前调用
+            # the dynamic weights are updated before calling this function
             ls = le + weight_data*ld + weight_bc*lb
             # ls = le + weight_bc*lb
  
@@ -633,7 +633,7 @@ class NS3D_UnSteady_PINNs(object):
         
     def loss_fn_all(self, Y_true, Y_pred):
         """
-        自定义loss
+        Custom loss.
         Y_true: [t, x, y]
         """       
         # loss of equations
@@ -653,7 +653,7 @@ class NS3D_UnSteady_PINNs(object):
         # prediction
         Y_pred = self.model(X[:,0:4])
        # Y_pred = self.model(X[:,0:3])
-        #注意：Y_true是[t,x,y]坐标
+        # Note: Y_true contains the [t,x,y] coordinates
         Y_true = Y[:,0:6]
         
         le = self.loss_fn_eqns(Y_true, Y_pred)
@@ -673,7 +673,7 @@ class NS3D_UnSteady_PINNs(object):
         """   
         Y_true = data['eqns'][0]
         Y_true = Y_true[:,0:6]
-        # 首先计算方程点的loss
+        # first compute the loss at the equation points
         # Y_true is the same as Xs
         X = Y_true[:,0:4]
         # the weight for space
@@ -685,7 +685,7 @@ class NS3D_UnSteady_PINNs(object):
         e2 = e2 * ws * wt
         e3 = e3 * ws * wt
         e4 = e4 * ws * wt
-        # multi-gpu：总和除以global_batch_size
+        # multi-gpu: sum divided by global_batch_size
         loss_eqns_e1 = tf.reduce_sum(tf.square(e1))*(1.0/self.global_batch_size)
         loss_eqns_e2 = tf.reduce_sum(tf.square(e2))*(1.0/self.global_batch_size)
         loss_eqns_e3 = tf.reduce_sum(tf.square(e3))*(1.0/self.global_batch_size)
@@ -726,11 +726,11 @@ class NS3D_UnSteady_PINNs(object):
                     # pt = val[idx,5:6]
                     up, vp, wp, pp = self.get_uvwp(tmpX)
                     
-                    # 根据误差大小设置权重
+                    # set the weight according to the error magnitude
                     tmpu = tf.square(ut-up)
                     tmpv = tf.square(vt-vp)
                     tmpw = tf.square(wt-wp)
-                    # multi-gpu：总和除以global_batch_size
+                    # multi-gpu: sum divided by global_batch_size
                     lossu = tf.reduce_sum(tmpu)*(1.0/self.cond_batch_size)
                     lossv = tf.reduce_sum(tmpv)*(1.0/self.cond_batch_size)   
                     lossw = tf.reduce_sum(tmpw)*(1.0/self.cond_batch_size)  
@@ -750,9 +750,9 @@ class NS3D_UnSteady_PINNs(object):
                     ut = batch_x[:,4:5]
                     # pt = val[idx,5:6]
                     up, vp, wp, pp = self.get_uvwp(tmpX)
-                    # 根据误差大小设置权重
+                    # set the weight according to the error magnitude
                     tmp = tf.square(ut-up)
-                    # multi-gpu：总和除以global_batch_size
+                    # multi-gpu: sum divided by global_batch_size
                     lossu = tf.reduce_sum(tmp)*(1.0/self.cond_batch_size) 
                     loss = loss + lossu
                     
@@ -768,9 +768,9 @@ class NS3D_UnSteady_PINNs(object):
                     vt = batch_x[:,4:5]
                     # pt = val[idx,5:6]
                     up, vp, wp, pp = self.get_uvwp(tmpX)
-                    # 根据误差大小设置权重
+                    # set the weight according to the error magnitude
                     tmp = tf.square(vt-vp)    
-                    # multi-gpu：总和除以global_batch_size
+                    # multi-gpu: sum divided by global_batch_size
                     lossv = tf.reduce_sum(tmp)*(1.0/self.cond_batch_size) 
                     loss = loss + lossv   
  
@@ -786,9 +786,9 @@ class NS3D_UnSteady_PINNs(object):
                     wt = batch_x[:,4:5]
                     # pt = val[idx,5:6]
                     up, vp, wp, pp = self.get_uvwp(tmpX)
-                    # 根据误差大小设置权重
+                    # set the weight according to the error magnitude
                     tmp = tf.square(wt-wp)   
-                    # multi-gpu：总和除以global_batch_size
+                    # multi-gpu: sum divided by global_batch_size
                     lossw = tf.reduce_sum(tmp)*(1.0/self.cond_batch_size) 
                     loss = loss + lossw                    
 
@@ -804,9 +804,9 @@ class NS3D_UnSteady_PINNs(object):
                     pt = batch_x[:,4:5]
                     # pt = val[idx,5:6]
                     up, vp, wp, pp = self.get_uvwp(tmpX)
-                    # 根据误差大小设置权重
+                    # set the weight according to the error magnitude
                     tmp = tf.square(pt-pp)
-                    # multi-gpu：总和除以global_batch_size                   
+                    # multi-gpu: sum divided by global_batch_size                   
                     lossp = tf.reduce_sum(tmp)*(1.0/self.cond_batch_size)
                     loss = loss + lossp   
                                 
@@ -822,9 +822,9 @@ class NS3D_UnSteady_PINNs(object):
                     tmpX = batch_x[:,0:4]
                     gt = batch_x[:,4:5]
                     gp = self.get_gradient(tmpX, key)
-                    # 根据误差大小设置权重
+                    # set the weight according to the error magnitude
                     tmp = tf.square(gt-gp)
-                    # multi-gpu：总和除以global_batch_size  
+                    # multi-gpu: sum divided by global_batch_size  
                     tmp = tf.reduce_sum(tmp)*(1.0/self.cond_batch_size)
                     loss = loss + tmp
 
@@ -854,7 +854,7 @@ class NS3D_UnSteady_PINNs(object):
             vt = tmpX[:,5:6]
             wt = tmpX[:,6:7]
             # pt = tmpX[:,7:8]
-            # multi-gpu：总和除以global_batch_size     
+            # multi-gpu: sum divided by global_batch_size     
             lossu = tf.reduce_sum(tf.square(ut-up))*(1.0/self.cond_batch_size)
             lossv = tf.reduce_sum(tf.square(vt-vp))*(1.0/self.cond_batch_size)
             lossw = tf.reduce_sum(tf.square(wt-wp))*(1.0/self.cond_batch_size)
@@ -965,9 +965,9 @@ class NS3D_UnSteady_PINNs(object):
                 # get the batch data and BCs
                 batch_data = self.get_batch_data()       
                 if count == 0:
-                    # estimate the dynamic weights which have been recorded in self.weight_data and self.weight_bc              
+                    # estimate the dynamic weights (stored in self.weight_data and self.weight_bc)
                     wd,wb = self.strategy.run(self.get_dynamic_weight, args=(batch_data,))
-                    # 多个GPU需要进行平均
+                    # average across GPUs
                     wd = self.strategy.reduce(tf.distribute.ReduceOp.MEAN, \
                                               wd,axis=None)
                     wb = self.strategy.reduce(tf.distribute.ReduceOp.MEAN, \

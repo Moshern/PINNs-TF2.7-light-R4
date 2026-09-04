@@ -48,29 +48,28 @@ def generate_dataset(data, data_rate=1.0, batchsize=64, isrepeat=True):
     # only consider equation point in train
     # train_Y is equal to train_X to record the coordinates
     data_num = data.shape[0]
-    # 对于Dataset，batch_size越大越好
-    # 当数据较小时，全部用于训练
+    # For a Dataset, a larger batch size is better; use all data when it is small
     batch_size = np.minimum(batchsize,int(data_num*data_rate))
     options = tf.data.Options()
     options.experimental_distribute.auto_shard_policy = tf.data.experimental.AutoShardPolicy.DATA
-    # 取出数据
+    # take out the data
     train_data = tf.data.Dataset.from_tensor_slices((data,data)).take(int(data_num*data_rate))
     train_data = train_data.with_options(options)
-    # 打乱数据
+    # shuffle the data
     train_data = train_data.shuffle(buffer_size=np.floor(data_num/1.0))
     if isrepeat:
-        # The default behavior (if count is None or -1) is for the dataset be repeated indefinitely.
+        # Repeat the dataset indefinitely
         train_data = train_data.repeat(None)
     # set the batch
     train_data = train_data.batch(batch_size)
-    # 预处理，CPU提前准备数据
+    # prefetch so the CPU prepares data ahead of time
     train_data = train_data.prefetch(buffer_size=tf.data.AUTOTUNE)
-    
-    # 跳过数据
+
+    # skip the training part for validation
     val_data = tf.data.Dataset.from_tensor_slices((data,data)).skip(int(data_num*data_rate))
     val_data = val_data.with_options(options)
-    val_data = val_data.batch(batch_size) 
-    # 预处理，CPU提前准备数据
+    val_data = val_data.batch(batch_size)
+    # prefetch so the CPU prepares data ahead of time
     val_data = val_data.prefetch(buffer_size=tf.data.AUTOTUNE)
     return train_data, val_data
 
@@ -101,8 +100,7 @@ def loss_custom(model, X, Y):
     # predicted by the model
     Y_pred = model(X, training=False)
     loss = tf.reduce_mean(tf.square(Y_pred-Y))
-    # 注意：有可能会有多个返回值
-    # 返回list, toal_loss放在第一位
+    # Note: multiple return values are possible; the total loss is the first one
     return [loss]
 
 
@@ -443,7 +441,7 @@ class LevenbergMarquardt(object):
         new_loss = self.new_loss
         stop_training = False
         if self.update_computed:
-            #如果参数已经更新，判断更新前后loss的大小
+            # compare the loss before and after the parameter update
             if new_loss < old_loss:
                 # Accept the new model variables and backup them.
                 self.old_loss = self.new_loss
@@ -451,7 +449,7 @@ class LevenbergMarquardt(object):
                 self.damping_factor = self.damping_algorithm.decrease(
                     self.damping_factor, self.new_loss)
                 self.backup_variables()
-                #loss减小，不用训练了
+                # loss decreased; no further training is needed
                 stop_training = True
             else:
                 # Restore the old variables and try a new damping_factor.
@@ -475,24 +473,24 @@ class LevenbergMarquardt(object):
         self.compute_Jac_Res(inputs, targets)
         attempt = 0
         attempts = tf.constant(self.attempts_per_step, dtype=tf.int32)
-        while tf.constant(True, dtype=tf.bool):     
-            #计算更新量
+        while tf.constant(True, dtype=tf.bool):
+            # compute the update
             updates = self.get_updates()
-            #更新权重
+            # update the weights
             self.update_variables(updates)
-            #计算loss,如果返回多个值,取第一个
+            # compute the loss; take the first value if multiple are returned
             tmp = self.loss_func(inputs, targets)
             self.new_loss = tmp[0]
-            #更新阻尼系数
+            # update the damping factor
             stop_training = self.update_damping_factor()
             #print(lm.damping_factor)
             if stop_training:
-                break                
+                break
             if attempt < attempts:
                 attempt += 1
             else:
                 break
-        # 当new_loss<old_loss, old_loss已经被更新
+        # when new_loss < old_loss, old_loss has already been updated
         return self.old_loss
  
             

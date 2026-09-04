@@ -186,18 +186,20 @@ def predict_on_plane(pinn_model, coord1_mesh, coord2_mesh, const_coord, const_co
 
 def predict_3d3c_AOCFD():
     """
-    2026-08-05 更新：适配"加噪声+降数据量"实验（合成噪声实验，回应审稿意见 Overall/C2）。
-    网格与时间范围直接取自 noise5 数据文件（pred_xmesh/pred_ymesh/pred_zmesh/mint/maxt，
-    与原始 3d3c_test_3dBendpipe1_Re1000Wo10.mat 一致），不再依赖旧的 SSS13 / ParaScan 数据。
-    平面：z=0（对称面 x-y）、y=2.4（弯管中心截面 x-z）、x=1.7（弯管中心截面 y-z）。
+    Predict on the z=0, y=2.4 and x=1.7 planes for the 3D curved-pipe case.
+    Updated 2026-08-05 for the noisy/low-data experiment (in response to reviewer comment Overall/C2).
+    The mesh and time range are read from the noise5 data file
+    (pred_xmesh/pred_ymesh/pred_zmesh/mint/maxt), which matches the original
+    3d3c_test_3dBendpipe1_Re1000Wo10.mat; the old SSS13 / ParaScan data is no longer used.
+    Planes: z=0 (symmetry plane x-y), y=2.4 (central bend cross-section x-z), x=1.7 (central bend cross-section y-z).
 
-    使用前：先跑完 train_3d3c_AOCFD 得到对应 savename 的权重；
-    预测哪组就把 savename 中的 data{xxx} 改为对应值（与 train.py 一致）。
+    Run train_3d3c_AOCFD first to obtain the weights for the matching savename;
+    to predict a different case, change data{xxx} in savename accordingly (same as train.py).
     """
 
     # ==== Load 3D mesh & time range from the noise5 data file itself ====
     mesh_pathname = './data/bendpipe'
-    # ---- 修改这里切换数据量（与 train.py 对应）----
+    # ---- switch the data file here (must match train.py) ----
     mesh_filename = 'Re1000Wo10_noise5_data5_pinn.mat'
     # ------------------------------------------------
     print(f"Loading 3D mesh & time range from {mesh_filename}...")
@@ -303,8 +305,8 @@ def predict_3d3c_AOCFD():
     print("Model loaded successfully!")
 
     # ==== Setup time vector ====
-    # 2026-08-05：mint/maxt 已在函数开头从 noise5 数据文件读取（mint=0, maxt=15.708，
-    # 对应 Wo=10 的一个完整脉动周期），不再依赖旧的 ParaScan 数据。
+    # mint/maxt are read from the noise5 data file at the top of this function
+    # (mint=0, maxt=15.708, one full pulsation period for Wo=10).
     tvec = np.linspace(mint, maxt, 201)
     print(f"Time range: [{mint}, {maxt}], {len(tvec)} time steps")
 
@@ -313,7 +315,7 @@ def predict_3d3c_AOCFD():
     filepath = './predict_results'
     os.makedirs(filepath, exist_ok=True)
 
-    # 1. Predict on z=0 plane (对称面 x-y)
+    # 1. Predict on z=0 plane (symmetry plane x-y)
     print("\n" + "="*50)
     print("Predicting on z=0 plane...")
     print("="*50)

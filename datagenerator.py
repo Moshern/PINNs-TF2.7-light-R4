@@ -43,7 +43,7 @@ def Hasanuzzaman_DataGenerator(data_pathname):
     data_dict['data_supervised'] = np.transpose(tmp['data_supervised'])
     data_dict['bc_uvw'] = np.transpose(tmp['bc_uvw'])
         
-    # 数据归一化参数
+    # normalization parameters
     # [min(t),min(x),min(y),mean(u),mean(v),mean(p)]
     # [max(t),max(x),max(y),std(u),std(v),std(p)]
     norm_paras = np.zeros([2,8])    
@@ -97,7 +97,7 @@ def wufan_DataGenerator(data_pathname, data_filename):
     # data_dict['bc_uy'] = np.transpose(tmp['bc_uy'])
     # data_dict['bc_vy'] = np.transpose(tmp['bc_vy'])
         
-    # 数据归一化参数
+    # normalization parameters
     # [min(t),min(x),min(y),mean(u),mean(v),mean(p)]
     # [max(t),max(x),max(y),std(u),std(v),std(p)]
     norm_paras = np.zeros([2,6])
@@ -152,7 +152,7 @@ def mitralvalve3D_DataGenerator(data_pathname, data_filename):
     # data_dict['bc_wy'] = np.transpose(tmp['bc_wy'])
     # data_dict['bc_py'] = np.transpose(tmp['bc_py'])
 
-    # 数据归一化参数
+    # normalization parameters
     # [min(t),min(x),min(y),mean(u),mean(v),mean(p)]
     # [max(t),max(x),max(y),std(u),std(v),std(p)]
     norm_paras = np.zeros([2,8])    
