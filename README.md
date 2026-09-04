@@ -65,32 +65,13 @@ and remove the vendored `autograd-minimize/` folder (or keep it; the import will
 
 ## Usage
 
-1. **Load the trained model and generate predictions**
+1. **Generate predictions (with the provided weights)**
 
-   The model is loaded with the `NS3D_UnSteady_PINNs` class from `pinns_3d.py`. Load the provided weights with:
-
-   ```python
-   savename = '2d3c_Wo10Bpi32_13_156_run0'
-   save_file = './weights/' + savename + '/' + savename
-   domain = scipy.io.loadmat(save_file + '_paras.mat', squeeze_me=True)
-   norm_paras = domain['norm_paras']
-   hp = {'layers': [4] + 13 * [156] + [4],
-         'ExistModel': 1, 'train': False, 'maptype': 'rnn',
-         'savename': savename, 'Re': 1000.0, 'alpha': 1.0,
-         'norm_paras': norm_paras, 'tf_epochs': 8000, 'tf_batch_size': 5000,
-         'initial_epoch': 0, 'init_lr': 1.0e-3,
-         'bfgs_epochs': 0, 'bfgs_batch_size': 10000,
-         'lm_epochs': 0, 'lm_batch_size': 200}
-   pinn_model = NS3D_UnSteady_PINNs(hp)
-   ```
-
-   The network then maps any spatiotemporal coordinate `(t, x, y, z)` in the domain to `(u, v, w, p)`. Plane predictions (e.g., on the z = 0 plane) can be generated on any mesh of interest; `predict.py` shows the full plane-prediction routine (`predict_on_plane`). The training data file also provides the mesh and time range (`pred_xmesh`, `pred_ymesh`, `pred_zmesh`, `mint`, `maxt`) used in the manuscript.
-
-   Note: the prediction entry currently enabled at the bottom of `predict.py` corresponds to a different (synthetic-noise) experiment whose data file is not included here. For the single-plane case provided here, load the weights as above and call the plane-prediction routine on the mesh from `data/bendpipe/2d3c_Wo10Bpi32_reslu40_noise0_pinn.mat`.
+   Run `python predict.py` (or execute `predict_3d3c_AOCFD()`). The script reads the mesh and time range from `data/bendpipe/2d3c_Wo10Bpi32_reslu40_noise0_pinn.mat`, loads the trained weights `weights/2d3c_Wo10Bpi32_13_156_run0`, predicts the velocity and pressure fields on the z = 0 plane over one pulsation period, and saves the result to `predict_results/2d3c_Wo10Bpi32_13_156_run0_plane_z0_predict.mat`.
 
 2. **Retrain the model from scratch**
 
-   The corresponding training setup is described in `train.py` (three-dimensional curved-pipe case, 13 hidden layers × 156 neurons, adaptive loss weighting, Adam + optional L-BFGS). Training a 3D case requires a GPU and takes on the order of 10–15 hours.
+   The corresponding training setup is described in `train.py` (three-dimensional curved-pipe case, 13 hidden layers × 156 neurons, adaptive loss weighting, Adam + optional L-BFGS). Run `python train.py`; the trained weights are saved under the same `savename` (`2d3c_Wo10Bpi32_13_156_run0`), so `predict.py` can then be run directly to regenerate the predictions. Training a 3D case requires a GPU and takes on the order of 10–15 hours.
 
 ## Reproducing the parameter sweep / data-coverage studies
 
