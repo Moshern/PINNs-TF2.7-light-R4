@@ -25,7 +25,7 @@ def train_3d3c_AOCFD():
     # rnum = [0,1,2]
     rnum = [0]
     for runidx in rnum:
-        # savename must match the data amount in data_filename
+        # savename must match the one used by predict_3d3c_AOCFD
         savename = '2d3c_Wo10Bpi32_13_156_run{runidx}'.format(runidx=runidx)
         hp = {'layers': [4] + 13 * [156] + [4],
               'ExistModel': 0,
